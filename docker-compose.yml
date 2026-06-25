@@ -1,0 +1,76 @@
+# docker compose 服务定义区域
+
+services:
+
+  # =========================
+  # MySQL 5.7 数据库服务
+  # =========================
+  mysql57:
+    image: mysql:5.7.44 # 使用Docker Hub官方镜像
+    container_name: mysql57 #  自定义容器名，方便 docker exec / logs 时直接使用 mysql57
+    restart: always # 自动重启
+    # 容器启动时注入环境变量
+    environment:
+      MYSQL_ROOT_PASSWORD: root # MySQL root 用户密码
+      TZ: Asia/Shanghai # 容器系统时区
+    # 端口映射：宿主机端口:容器端口
+    ports:
+      - "3306:3306" # 端口映射 本机:docker内部。本机通过 127.0.0.1:3306 即可连接 MySQL
+    # 数据卷挂载（持久化数据）
+    volumes:
+      - mysql57:/var/lib/mysql # MySQL 数据目录，删除容器后数据仍保留
+    # 覆盖默认启动命令
+    command: mysqld --default-time-zone=Asia/Shanghai # 强制 MySQL 内部时区为上海，避免 now() 时间异常
+
+  # =========================
+  # Redis 5.0 缓存服务
+  # =========================
+  redis50:
+    image: redis:5.0.14
+    container_name: redis50
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis50:/data # Redis 持久化目录（dump.rdb / appendonly.aof）
+    command: redis-server --appendonly yes # 开启 AOF 持久化，减少宕机丢数据风险
+
+  # =========================
+  # PHP 7.0（PHP-FPM）服务
+  # =========================
+  php70:
+    build: ./php70 # 根据当前目录下 ./php70/Dockerfile 构建镜像
+    image: docker-php-php70 # 构建后的镜像名称
+    container_name: php70
+    restart: always
+    environment:
+      RUNNING_IN_DOCKER: "1" # 容器内使用 admin.docker.conf.php 连接 mysql57/redis50
+    volumes:
+      - /Users/rainzzer/code:/Users/rainzzer/code # 挂载本机代码目录
+    ports:
+      - "9002:9000" # 宿主机 9002 映射到容器 9000（PHP-FPM 默认监听 9000）
+
+  # =========================
+  # Nginx 服务
+  # =========================
+  nginx:
+    image: nginx:1.24-alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "8088:80" # 浏览器访问 http://localhost:8088 -> 容器内 80 端口
+    volumes:
+      - /Users/rainzzer/code:/Users/rainzzer/code:ro # 挂载本机代码目录（只读）
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # 挂载主配置文件
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro # 挂载虚拟主机配置目录（server 配置）
+    depends_on:
+      - php70 # 启动顺序依赖：先启动 php70，再启动 nginx（仅保证启动顺序，不保证服务 ready）
+
+# =========================
+# Docker数据卷的名称
+# =========================
+volumes:
+  mysql57:
+    name: mysql57 # MySQL 专用数据卷，用于持久化数据库文件
+  redis50:
+    name: redis50 # Redis 专用数据卷，用于持久化缓存数据
