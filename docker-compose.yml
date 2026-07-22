@@ -11,7 +11,7 @@ services:
     restart: always # 自动重启
     # 容器启动时注入环境变量
     environment:
-      MYSQL_ROOT_PASSWORD: root # MySQL root 用户密码
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes" # 允许 root 空密码
       TZ: Asia/Shanghai # 容器系统时区
     # 端口映射：宿主机端口:容器端口
     ports:
