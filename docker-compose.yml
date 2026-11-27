@@ -30,18 +30,18 @@ services:
     container_name: redis50
     restart: always
     ports:
-      - "6379:6379"
+      - "6379:6379" # 本机通过 127.0.0.1:6379 连接 Redis 5.0.14
     volumes:
       - redis50:/data # Redis 持久化目录（dump.rdb / appendonly.aof）
     command: redis-server --appendonly yes # 开启 AOF 持久化，减少宕机丢数据风险
 
   # =========================
-  # PHP 7.0（PHP-FPM）服务
+  # PHP 7.4（PHP-FPM）服务
   # =========================
-  php70:
-    build: ./php70 # 根据当前目录下 ./php70/Dockerfile 构建镜像
-    image: docker-php-php70 # 构建后的镜像名称
-    container_name: php70
+  php74:
+    build: ./php74 # 根据当前目录下 ./php74/Dockerfile 构建镜像
+    image: php74 # 构建后的镜像名称
+    container_name: php74
     restart: always
     environment:
       RUNNING_IN_DOCKER: "1" # 容器内使用 admin.docker.conf.php 连接 mysql57/redis50
@@ -64,7 +64,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # 挂载主配置文件
       - ./nginx/conf.d:/etc/nginx/conf.d:ro # 挂载虚拟主机配置目录（server 配置）
     depends_on:
-      - php70 # 启动顺序依赖：先启动 php70，再启动 nginx（仅保证启动顺序，不保证服务 ready）
+      - php74 # 启动顺序依赖：先启动 php74，再启动 nginx（仅保证启动顺序，不保证服务 ready）
 
 # =========================
 # Docker数据卷的名称

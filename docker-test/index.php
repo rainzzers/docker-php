@@ -15,7 +15,7 @@ header('Content-Type: text/html; charset=utf-8');
     </style>
 </head>
 <body>
-    <h1>Nginx + PHP 7.0 测试页</h1>
+    <h1>Nginx + PHP 7.4 测试页</h1>
     <p>如果你能看到这个页面，说明 <strong>Nginx → PHP-FPM</strong> 链路正常。</p>
     <ul>
         <li>PHP 版本：<code><?php echo PHP_VERSION; ?></code></li>
@@ -48,7 +48,7 @@ header('Content-Type: text/html; charset=utf-8');
         }
 
         try {
-            new PDO('mysql:host=mysql57;port=3306', 'root', 'root');
+            new PDO('mysql:host=mysql57;port=3306', 'root', '');
             check('MySQL (mysql57)', true);
         } catch (Exception $e) {
             check('MySQL (mysql57)', false, $e->getMessage());

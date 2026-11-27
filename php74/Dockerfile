@@ -1,15 +1,16 @@
-FROM php:7.0-fpm
+FROM php:7.4.33-fpm-bullseye
 
 RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
     && sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list \
-    && sed -i '/stretch-updates/d' /etc/apt/sources.list \
+    && sed -i '/bullseye-updates/d' /etc/apt/sources.list \
     && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until \
     && echo 'APT::Get::AllowUnauthenticated "true";' >> /etc/apt/apt.conf.d/99no-check-valid-until \
-    && apt-get update \
-    && apt-get install -y --allow-unauthenticated --no-install-recommends \
+    && apt-get -o Acquire::Retries=3 update \
+    && apt-get -o Acquire::Retries=3 install -y --allow-unauthenticated --no-install-recommends \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
+        libonig-dev \
         libzip-dev \
         libicu-dev \
         libxml2-dev \
@@ -30,7 +31,7 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
         libxslt1-dev \
         libdb-dev \
         unzip \
-    && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure ldap --with-libdir=lib/$(uname -m)-linux-gnu/ \
     && docker-php-ext-install -j"$(nproc)" \
         bz2 \
@@ -41,7 +42,6 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
         ldap \
         mbstring \
         mysqli \
-        mcrypt \
         pcntl \
         pdo_mysql \
         pdo_pgsql \
@@ -51,7 +51,6 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
         sysvsem \
         sysvshm \
         tidy \
-        wddx \
         xmlrpc \
         xsl \
         gd \
@@ -62,12 +61,12 @@ RUN sed -i 's/deb.debian.org/archive.debian.org/g' /etc/apt/sources.list \
         opcache \
         soap \
         sockets \
-    && pecl install redis-5.3.7 imagick xdebug-2.5.5 \
-    && docker-php-ext-enable redis imagick xdebug \
+    && pecl install redis-5.3.7 imagick-3.7.0 xdebug-2.9.8 mcrypt-1.0.7 \
+    && docker-php-ext-enable redis imagick xdebug mcrypt \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# brew 另有 PDO_ODBC / pdo_dblib（独立 odbc 扩展在 stretch 镜像上编译困难）
+# brew 另有 PDO_ODBC / pdo_dblib（独立 odbc 扩展在 Debian 镜像上编译困难）
 RUN mkdir -p /usr/local/incl \
     && ln -sf /usr/include/sqlext.h /usr/local/incl/sqlext.h \
     && ln -sf /usr/include/sql.h /usr/local/incl/sql.h \
